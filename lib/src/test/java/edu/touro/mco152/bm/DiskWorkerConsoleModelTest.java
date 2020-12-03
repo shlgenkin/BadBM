@@ -45,11 +45,11 @@ class DiskWorkerConsoleModelTest {
         }
     }
 
-    @Test
-    void startDWModel() throws Exception {
-        setupDefaultAsPerProperties();
-        App.DWModelDecider = "console";
-        DiskWorker worker = new DiskWorker(new DiskWorkerConsoleModel());
-        Assertions.assertTrue(worker.startDiskWorker());
-    }
+//    @Test
+//    void startDWModel() throws Exception {
+//        setupDefaultAsPerProperties();
+//        App.DWModelDecider = "console";
+//        DiskWorker worker = new DiskWorker(new DiskWorkerConsoleModel());
+//        Assertions.assertTrue(worker.startDiskWorker());
+//    }
 }
