@@ -37,17 +37,32 @@ import static edu.touro.mco152.bm.DiskMark.MarkType.WRITE;
  * Swing using an instance of the DiskMark class.
  */
 
-public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
+public class DiskWorker {
 
-    @Override
-    protected Boolean doInBackground() throws Exception {
+    private static DiskWorkerInterface DWModel;
 
+    public DiskWorker (DiskWorkerInterface inputDWModel) {
+        // Assign argument to DWModel and call its startDWModel method to begin configuration.
+        DWModel = inputDWModel;
+        DWModel.startDWModel();
+    }
+
+    public boolean startDiskWorker() throws Exception {
         /**
+         * The previous configuration was (which may help with QA):
          * We 'got here' because: a) End-user clicked 'Start' on the benchmark UI,
          * which triggered the start-benchmark event associated with the App::startBenchmark()
          * method.  b) startBenchmark() then instantiated a DiskWorker, and called
          * its (super class's) execute() method, causing Swing to eventually
          * call this doInBackground() method.
+         *
+         * Currently, this method (previously named doInBackground) was renamed to startDiskWorker()
+         * and is essentially the same as before, albeit with minor changes. Instead of being called by
+         * Swing automatically (i.e. event-driven) it is now called manually, sometimes from the DWModel,
+         * to facilitate Swing independence. Similarly, other Swing dependencies were removed by referencing
+         * the DWModel (i.e. calling publishDWI() of the interface instead of publish() of Swing) which
+         * in some cases accomplishes the same function as Swing by simply passing the argument to the
+         * corresponding Swing function.
          */
         System.out.println("*** starting new worker thread");
         msg("Running readTest " + App.readTest + "   writeTest " + App.writeTest);
@@ -109,7 +124,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
              * that keeps writing data (in its own loop - for specified # of blocks). Each 'Mark' is timed
              * and is reported to the GUI for display as each Mark completes.
              */
-            for (int m = startFileNum; m < startFileNum + App.numOfMarks && !isCancelled(); m++) {
+            for (int m = startFileNum; m < startFileNum + App.numOfMarks && !DWModel.isCancelledDWI(); m++) {
 
                 if (App.multiFile) {
                     testFile = new File(dataDir.getAbsolutePath()
@@ -143,7 +158,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
                             /**
                              * Report to GUI what percentage level of Entire BM (#Marks * #Blocks) is done.
                              */
-                            setProgress((int) percentComplete);
+                            DWModel.setProgressDWI((int) percentComplete);
                         }
                     }
                 } catch (IOException ex) {
@@ -166,7 +181,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
                 /**
                  * Let the GUI know the interim result described by the current Mark
                  */
-                publish(wMark);
+                DWModel.publishDWI(wMark);
 
                 // Keep track of statistics to be displayed and persisted after all Marks are done.
                 run.setRunMax(wMark.getCumMax());
@@ -193,7 +208,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
          */
 
         // try renaming all files to clear catch
-        if (App.readTest && App.writeTest && !isCancelled()) {
+        if (App.readTest && App.writeTest && !DWModel.isCancelledDWI()) {
             JOptionPane.showMessageDialog(Gui.mainFrame,
                     "For valid READ measurements please clear the disk cache by\n" +
                             "using the included RAMMap.exe or flushmem.exe utilities.\n" +
@@ -217,7 +232,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
             Gui.chartPanel.getChart().getTitle().setVisible(true);
             Gui.chartPanel.getChart().getTitle().setText(run.getDiskInfo());
 
-            for (int m = startFileNum; m < startFileNum + App.numOfMarks && !isCancelled(); m++) {
+            for (int m = startFileNum; m < startFileNum + App.numOfMarks && !DWModel.isCancelledDWI(); m++) {
 
                 if (App.multiFile) {
                     testFile = new File(dataDir.getAbsolutePath()
@@ -242,7 +257,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
                             rUnitsComplete++;
                             unitsComplete = rUnitsComplete + wUnitsComplete;
                             percentComplete = (float) unitsComplete / (float) unitsTotal * 100f;
-                            setProgress((int) percentComplete);
+                            DWModel.setProgressDWI((int) percentComplete);
                         }
                     }
                 } catch (FileNotFoundException ex) {
@@ -256,7 +271,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
                 msg("m:" + m + " READ IO is " + rMark.getBwMbSec() + " MB/s    "
                         + "(MBread " + mbRead + " in " + sec + " sec)");
                 App.updateMetrics(rMark);
-                publish(rMark);
+                DWModel.publishDWI(rMark);
 
                 run.setRunMax(rMark.getCumMax());
                 run.setRunMin(rMark.getCumMin());
@@ -275,27 +290,7 @@ public class DiskWorker extends SwingWorker<Boolean, DiskMark> {
         return true;
     }
 
-    @Override
-    protected void process(List<DiskMark> markList) {
-        /**
-         * We are passed a list of one or more DiskMark objects that our thread has previously
-         * published to Swing. Watch Professor Cohen's video - Module_6_RefactorBadBM Swing_DiskWorker_Tutorial.mp4
-         */
-        markList.stream().forEach((dm) -> {
-            if (dm.type == DiskMark.MarkType.WRITE) {
-                Gui.addWriteMark(dm);
-            } else {
-                Gui.addReadMark(dm);
-            }
-        });
-    }
-
-    @Override
-    protected void done() {
-        if (App.autoRemoveData) {
-            Util.deleteDirectory(dataDir);
-        }
-        App.state = App.State.IDLE_STATE;
-        Gui.mainFrame.adjustSensitivity();
+    public void cancel(boolean b) {
+        DWModel.cancelDWI(b);
     }
 }

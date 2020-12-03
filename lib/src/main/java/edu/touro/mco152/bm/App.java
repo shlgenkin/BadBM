@@ -5,11 +5,10 @@ import edu.touro.mco152.bm.ui.Gui;
 import edu.touro.mco152.bm.ui.MainFrame;
 import edu.touro.mco152.bm.ui.SelectFrame;
 
-import javax.swing.SwingWorker.StateValue;
 import javax.swing.*;
 import javax.swing.UIManager.LookAndFeelInfo;
-import java.beans.PropertyChangeEvent;
 import java.io.*;
+import java.util.InputMismatchException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +44,8 @@ public class App {
     public static int numOfBlocks = 32;     // desired number of blocks
     public static int blockSizeKb = 512;    // size of a block in KBs
     public static DiskWorker worker = null;
+    public static String DWModelDecider = "SwingUI";
+    private static DiskWorkerInterface DWModel = null;
     public static int nextMarkNumber = 1;   // number of the next mark
     public static double wMax = -1, wMin = -1, wAvg = -1;
     public static double rMax = -1, rMin = -1, rAvg = -1;
@@ -265,28 +266,18 @@ public class App {
             dataDir.mkdirs();
         }
 
-        //7. start disk worker thread
-        worker = new DiskWorker();
-        worker.addPropertyChangeListener((final PropertyChangeEvent event) -> {
-            switch (event.getPropertyName()) {
-                case "progress":
-                    int value = (Integer) event.getNewValue();
-                    Gui.progressBar.setValue(value);
-                    long kbProcessed = (value) * App.targetTxSizeKb() / 100;
-                    Gui.progressBar.setString(kbProcessed + " / " + App.targetTxSizeKb());
-                    break;
-                case "state":
-                    switch ((StateValue) event.getNewValue()) {
-                        case STARTED:
-                            Gui.progressBar.setString("0 / " + App.targetTxSizeKb());
-                            break;
-                        case DONE:
-                            break;
-                    } // end inner switch
-                    break;
-            }
-        });
-        worker.execute();
+        //7. initialize appropriate DWModel and pass it into DiskWorker constructor, which in turn starts disk worker thread in some cases
+        switch(DWModelDecider.toLowerCase()) {
+            case "console":
+                DWModel = new DiskWorkerConsoleModel();
+                break;
+            case "swingui":
+                DWModel = new DiskWorkerSwingModel();
+                break;
+            default:
+                throw new InputMismatchException("No DWModel was selected. Make sure you spelled the desired model correctly. It is not case-sensitive.");
+        }
+        worker = new DiskWorker(DWModel);
     }
 
     public static long targetMarkSizeKb() {
