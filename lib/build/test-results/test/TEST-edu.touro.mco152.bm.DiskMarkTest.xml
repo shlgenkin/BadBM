@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.touro.mco152.bm.DiskMarkTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2020-12-03T01:18:03" hostname="XPS-15-9560" time="0.05">
+  <properties/>
+  <testcase name="[1] 4.9E-324" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.032"/>
+  <testcase name="[2] -3.0" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.001"/>
+  <testcase name="[3] -1.0" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.001"/>
+  <testcase name="[4] 0.0" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.001"/>
+  <testcase name="[5] 1.0" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.001"/>
+  <testcase name="[6] 2.0" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.001"/>
+  <testcase name="[7] 3.0" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.001"/>
+  <testcase name="[8] 1.7976931348623157E308" classname="edu.touro.mco152.bm.DiskMarkTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
