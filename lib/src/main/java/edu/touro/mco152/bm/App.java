@@ -266,7 +266,7 @@ public class App {
             dataDir.mkdirs();
         }
 
-        //7. initialize appropriate DWModel and pass it into DiskWorker constructor, which in turn starts disk worker thread in some cases
+        //7. initialize appropriate DWModel and pass it into DiskWorker constructor, then call DWModel's startDWModel() method which may be necessary.
         switch(DWModelDecider.toLowerCase()) {
             case "console":
                 DWModel = new DiskWorkerConsoleModel();
@@ -278,6 +278,7 @@ public class App {
                 throw new InputMismatchException("No DWModel was selected. Make sure you spelled the desired model correctly. It is not case-sensitive.");
         }
         worker = new DiskWorker(DWModel);
+        DWModel.startDWModel();
     }
 
     public static long targetMarkSizeKb() {
