@@ -2,9 +2,11 @@ package edu.touro.mco152.bm.commandOperations;
 
 import edu.touro.mco152.bm.App;
 import edu.touro.mco152.bm.DiskWorkerConsoleModel;
+import edu.touro.mco152.bm.observers.TestObserver;
 import edu.touro.mco152.bm.persist.DiskRun;
 import edu.touro.mco152.bm.ui.Gui;
 import edu.touro.mco152.bm.ui.MainFrame;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -13,17 +15,22 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This is a test for command executors. At the current time, it only tests the serial command executor.
+ * This is a test for command executors. At the current time, it only tests the serial command executor. The last line
+ * of the serialCommandExecutor test also tests the observer ensuring the TestObserver was notified.
  */
 class CommandExecutorTest {
+
+    @BeforeAll
+    public static void registerObservers() {
+        ReceiverWriteRead.registerObserver(new TestObserver());
+    }
 
     /**
      * Bruteforce setup of static classes/fields to allow DiskWorker to run.
      *
      * @author lcmcohen
      */
-    private void setupDefaultAsPerProperties()
-    {
+    private void setupDefaultAsPerProperties() {
         /// Do the minimum of what  App.init() would do to allow to run.
         Gui.mainFrame = new MainFrame();
         App.p = new Properties();
@@ -36,7 +43,7 @@ class CommandExecutorTest {
 
         // code from startBenchmark
         //4. create data dir reference
-        App.dataDir = new File(App.locationDir.getAbsolutePath()+File.separator+App.DATADIRNAME);
+        App.dataDir = new File(App.locationDir.getAbsolutePath() + File.separator + App.DATADIRNAME);
 
         //5. remove existing test data if exist
         if (App.dataDir.exists()) {
@@ -45,15 +52,13 @@ class CommandExecutorTest {
             } else {
                 App.msg("unable to remove existing data dir");
             }
-        }
-        else
-        {
+        } else {
             App.dataDir.mkdirs(); // create data dir if not already present
         }
     }
 
     @Test
-    public void SerialCommandExecutorTest(){
+    public void SerialCommandExecutorTest() {
         setupDefaultAsPerProperties();
         var serialCommandExecutor = new SerialCommandExecutor();
         assertTrue(serialCommandExecutor.executeCommand(new ReadCommand(
@@ -62,5 +67,7 @@ class CommandExecutorTest {
         assertTrue(serialCommandExecutor.executeCommand(new WriteCommand(
                 new DiskWorkerConsoleModel(),
                 25, 2, 4, DiskRun.BlockSequence.SEQUENTIAL)));
+
+        assertTrue(TestObserver.notified);//Ensure TestObserver's update() method was called
     }
 }

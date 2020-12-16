@@ -36,10 +36,12 @@ dependencies {
     // Charting api/runtime
     api  group: 'org.jfree', name: 'jfreechart', version: '1.0.17'
 
-    // database/persistence
+    // database/persistence/Slack Messages
     api group: 'javax.persistence', name: 'javax.persistence-api', version: '2.2'
     implementation group: 'org.eclipse.persistence', name: 'org.eclipse.persistence.jpa.modelgen', version: '2.4.2'
     implementation group: 'org.eclipse.persistence', name: 'eclipselink', version: '2.7.5'
+    implementation ("com.slack.api:slack-api-client:1.4.0")
+    implementation("org.slf4j:slf4j-simple:1.7.30")
 
     // DBMS
     implementation group: 'org.apache.derby', name: 'derby', version: '10.13.1.1'
