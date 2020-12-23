@@ -14,7 +14,7 @@ public class DiskWorkerSwingModel extends SwingWorker<Boolean, DiskMark> impleme
     public Boolean doInBackground() throws Exception {
         /**
          * Simply calls startDiskWorker of DiskWorker.java to manage everything.
-         * If necessary, startDiskWorker will call this classes Swing replacement
+         * If necessary, startDiskWorker will call this class's Swing replacement
          * methods such as setProgressDWI() or publishDWI() which will in turn
          * pass on the argument to the corresponding Swing method.
          */

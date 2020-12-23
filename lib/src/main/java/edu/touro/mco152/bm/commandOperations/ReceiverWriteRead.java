@@ -1,16 +1,15 @@
 package edu.touro.mco152.bm.commandOperations;
 
 import edu.touro.mco152.bm.*;
+import edu.touro.mco152.bm.observers.IObserver;
 import edu.touro.mco152.bm.persist.DiskRun;
-import edu.touro.mco152.bm.persist.EM;
 import edu.touro.mco152.bm.ui.Gui;
 
-import javax.persistence.EntityManager;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,10 +21,14 @@ import static edu.touro.mco152.bm.DiskMark.MarkType.WRITE;
 /**
  * This is a receiver class which encapsulates all of the logic and actions necessary to accomplish the specified
  * operations. This class currently contains only the read and write operations. Both operations share multiple
- * resources, so it seems much more efficient and organized to have both operations in one class.
+ * resources, so it seems much more efficient and organized to have both operations in one class. Additionally, the
+ * class acts as the "Subject" in the observer pattern. Upon completion of a benchmark, this class notifies registered
+ * observers by calling their update() methods. Observers can be registered and unregistered in this class as well.
  */
 public class ReceiverWriteRead {
+    static final LinkedList<IObserver> observersList = new LinkedList<>();
     DiskWorkerInterface DWModel;
+    DiskRun run;
     int wUnitsComplete = 0, rUnitsComplete = 0, unitsComplete;
     int numOfMarks, numOfBlocks, blockSizeKb;
     DiskRun.BlockSequence blockSequence;
@@ -54,6 +57,17 @@ public class ReceiverWriteRead {
         }
     }
 
+    public static void registerObserver(IObserver inputIO) {
+        observersList.add(inputIO);
+    }
+
+    public static void unregisterObserver(IObserver inputIO) {
+        observersList.remove(inputIO);
+    }
+
+    public static void unregisterAllObservers() {
+        observersList.clear();
+    }
 
     /**
      * This method is a duplicate of the targetTxSizeKB() method in App.java. This method is necessary to ensure this
@@ -67,7 +81,7 @@ public class ReceiverWriteRead {
      * The code in this method was originally duplicated in different methods. The similar code was extracted and placed
      * in one method for better organization and modularization.
      */
-    private void configBasicInfo(DiskRun run) {
+    private void configBasicInfo() {
         run.setNumMarks(numOfMarks);
         run.setNumBlocks(numOfBlocks);
         run.setBlockSize(blockSizeKb);
@@ -80,8 +94,8 @@ public class ReceiverWriteRead {
 
     public boolean writeOperation() {
         DiskMark wMark;
-        DiskRun run = new DiskRun(DiskRun.IOMode.WRITE, blockSequence);
-        configBasicInfo(run);
+        run = new DiskRun(DiskRun.IOMode.WRITE, blockSequence);
+        configBasicInfo();
 
         // Create a test data file using the default file system and config-specified location
         if (!App.multiFile) {
@@ -158,22 +172,14 @@ public class ReceiverWriteRead {
             run.setRunAvg(wMark.getCumAvg());
             run.setEndTime(new Date());
         } // END outer loop for specified duration (number of 'marks') for WRITE bench mark
-
-        /**
-         * Persist info about the Write BM Run (e.g. into Derby Database) and add it to a GUI panel
-         */
-        EntityManager em = EM.getEntityManager();
-        em.getTransaction().begin();
-        em.persist(run);
-        em.getTransaction().commit();
-        Gui.runPanel.addRun(run);
+        notifyObservers();
         return true;
     }
 
     public boolean readOperation() {
         DiskMark rMark;
-        DiskRun run = new DiskRun(DiskRun.IOMode.READ, App.blockSequence);
-        configBasicInfo(run);
+        run = new DiskRun(DiskRun.IOMode.READ, App.blockSequence);
+        configBasicInfo();
         for (int m = startFileNum; m < startFileNum + App.numOfMarks && !DWModel.isCancelledDWI(); m++) {
 
             if (App.multiFile) {
@@ -220,12 +226,16 @@ public class ReceiverWriteRead {
             run.setRunAvg(rMark.getCumAvg());
             run.setEndTime(new Date());
         }
-
-        EntityManager em = EM.getEntityManager();
-        em.getTransaction().begin();
-        em.persist(run);
-        em.getTransaction().commit();
-        Gui.runPanel.addRun(run);
+        notifyObservers();
         return true;
     }
+
+    private void notifyObservers() {
+        if (!observersList.isEmpty()) {
+            for (IObserver IO : observersList) {
+                IO.update(run);
+            }
+        }
+    }
+
 }

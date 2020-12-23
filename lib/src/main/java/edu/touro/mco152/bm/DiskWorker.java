@@ -1,9 +1,12 @@
 package edu.touro.mco152.bm;
 
+import edu.touro.mco152.bm.commandOperations.ReceiverWriteRead;
 import edu.touro.mco152.bm.commandOperations.SerialCommandExecutor;
 import edu.touro.mco152.bm.commandOperations.ReadCommand;
 import edu.touro.mco152.bm.commandOperations.WriteCommand;
-import edu.touro.mco152.bm.persist.DiskRun;
+import edu.touro.mco152.bm.observers.DBObserver;
+import edu.touro.mco152.bm.observers.RunPanelObserver;
+import edu.touro.mco152.bm.observers.RulesMessageObserver;
 import edu.touro.mco152.bm.ui.Gui;
 
 import javax.swing.*;
@@ -34,6 +37,11 @@ public class DiskWorker {
     public DiskWorker(DiskWorkerInterface inputDWModel) {
         // Assign argument to DWModel
         DWModel = inputDWModel;
+        ReceiverWriteRead.unregisterAllObservers();//Clear observer list from previous usages.
+        //Register necessary observers
+        ReceiverWriteRead.registerObserver(new RunPanelObserver());
+        ReceiverWriteRead.registerObserver(new DBObserver());
+        ReceiverWriteRead.registerObserver(new RulesMessageObserver());
     }
 
     public boolean startDiskWorker() {
@@ -55,7 +63,6 @@ public class DiskWorker {
         msg("Running readTest " + App.readTest + "   writeTest " + App.writeTest);
         msg("num files: " + App.numOfMarks + ", num blks: " + App.numOfBlocks
                 + ", blk size (kb): " + App.blockSizeKb + ", blockSequence: " + App.blockSequence);
-
         Gui.updateLegend();  // init chart legend info
         var serialCommandExecutor = new SerialCommandExecutor(); // init the executor to process some operations
         if (App.autoReset) {
