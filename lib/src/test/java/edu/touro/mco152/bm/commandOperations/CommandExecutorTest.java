@@ -15,8 +15,9 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * This is a test for command executors. At the current time, it only tests the serial command executor. The last line
- * of the serialCommandExecutor test also tests the observer ensuring the TestObserver was notified.
+ * This is a test for command executors. At the current time, it only tests the serial command executor with and without
+ * the commandBuilder for command executors. The last line of the serialCommandExecutor test also tests the observer
+ * ensuring the TestObserver was notified.
  */
 class CommandExecutorTest {
 
@@ -70,4 +71,44 @@ class CommandExecutorTest {
 
         assertTrue(TestObserver.notified);//Ensure TestObserver's update() method was called
     }
+
+    /**
+     * This test ensures the command builder functions properly by setting some parameters, running a command, and
+     * comparing the parameters set in the command builder to the parameters returned by a DiskRun object. A DiskRun
+     * object is obtained via the TestObserver.
+     */
+    @Test
+    public void SerialCommandExecutorTestWithCommandBuilder() {
+        setupDefaultAsPerProperties();
+        var serialCommandExecutor = new SerialCommandExecutor();
+        var commandBuilder = new CommandBuilder().
+                setDWModel(new DiskWorkerConsoleModel()).
+                setNumOfMarks(25).setNumOfBlocks(2).setBlockSizeKB(4).setBlockSeq(DiskRun.BlockSequence.SEQUENTIAL);
+        DiskRun diskRun;
+
+        //Write tests
+        assertTrue(serialCommandExecutor.executeCommand(commandBuilder.setCommandType("write").build()));
+        diskRun = TestObserver.getRun();
+        assertEquals(25, diskRun.getNumMarks());
+        assertEquals(2, diskRun.getNumBlocks());
+        //Change some values, rerun the command, and compare.
+        commandBuilder.setNumOfMarks(10).setNumOfBlocks(1).setBlockSizeKB(4).setBlockSeq(DiskRun.BlockSequence.SEQUENTIAL);
+        assertTrue(serialCommandExecutor.executeCommand(commandBuilder.setCommandType("write").build()));
+        diskRun = TestObserver.getRun(); //Obtain a new disk run with updated parameters.
+        assertEquals(10, diskRun.getNumMarks());
+        assertEquals(1, diskRun.getNumBlocks());
+
+        //Read tests
+        assertTrue(serialCommandExecutor.executeCommand(commandBuilder.setCommandType("read").build()));
+        diskRun = TestObserver.getRun();
+        assertEquals(10, diskRun.getNumMarks());
+        assertEquals(1, diskRun.getNumBlocks());
+        //Change some values, rerun the command, and compare.
+        commandBuilder.setNumOfMarks(15).setNumOfBlocks(2).setBlockSizeKB(4).setBlockSeq(DiskRun.BlockSequence.SEQUENTIAL);
+        assertTrue(serialCommandExecutor.executeCommand(commandBuilder.setCommandType("read").build()));
+        diskRun = TestObserver.getRun();
+        assertEquals(15, diskRun.getNumMarks());
+        assertEquals(2, diskRun.getNumBlocks());
+    }
+
 }
