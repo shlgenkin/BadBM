@@ -1,9 +1,6 @@
 package edu.touro.mco152.bm;
 
-import edu.touro.mco152.bm.commandOperations.ReceiverWriteRead;
-import edu.touro.mco152.bm.commandOperations.SerialCommandExecutor;
-import edu.touro.mco152.bm.commandOperations.ReadCommand;
-import edu.touro.mco152.bm.commandOperations.WriteCommand;
+import edu.touro.mco152.bm.commandOperations.*;
 import edu.touro.mco152.bm.observers.DBObserver;
 import edu.touro.mco152.bm.observers.RunPanelObserver;
 import edu.touro.mco152.bm.observers.RulesMessageObserver;
@@ -58,6 +55,9 @@ public class DiskWorker {
          * Swing automatically (i.e. event-driven) it is now called manually, sometimes from the DWModel,
          * to facilitate Swing independence. Secondly, this method utilizes the command pattern by instantiating an
          * executor and processing certain operations, currently the read and write operations, via the executor.
+         * The current way of utilizing the command pattern is by instantiating a commandBuilder and only specifying
+         * the common parameters that will be used for all operations. The commandBuilder is reused for each operation
+         * with the unique parameters specified with each new use followed by a call to the build() method.
          */
         System.out.println("*** starting new worker thread");
         msg("Running readTest " + App.readTest + "   writeTest " + App.writeTest);
@@ -65,6 +65,9 @@ public class DiskWorker {
                 + ", blk size (kb): " + App.blockSizeKb + ", blockSequence: " + App.blockSequence);
         Gui.updateLegend();  // init chart legend info
         var serialCommandExecutor = new SerialCommandExecutor(); // init the executor to process some operations
+        var commandBuilder = new CommandBuilder(); //Instantiate a command builder that will be used to process the commands
+        commandBuilder.setDWModel(DWModel).setNumOfMarks(App.numOfMarks).setNumOfBlocks(App.numOfBlocks).
+                setBlockSizeKB(App.blockSizeKb).setBlockSeq(App.blockSequence); //Specify all details except the type of command to be used.
         if (App.autoReset) {
             App.resetTestData();
             Gui.resetTestData();
@@ -76,8 +79,8 @@ public class DiskWorker {
 
         if (App.writeTest) {
             serialCommandExecutor.executeCommand(
-                    new WriteCommand(DWModel, numOfMarks, numOfBlocks, blockSizeKb, blockSequence));
-            //Process a command via the executor including passing in relevant arguments
+                    commandBuilder.setCommandType("write").build());
+            //Process a command via the executor with the commandBuilder and specify the type of command which is "write"
         }
 
         /**
@@ -97,10 +100,10 @@ public class DiskWorker {
                     "Clear Disk Cache Now", JOptionPane.PLAIN_MESSAGE);
         }
 
-        // Same as above, just for Read operations instead of Writes.
+        // Same as above, just for Read operations instead of Writes. Specify the type "read" for the commandBuilder.
         if (readTest) {
             serialCommandExecutor.executeCommand(
-                    new ReadCommand(DWModel, numOfMarks, numOfBlocks, blockSizeKb, blockSequence));
+                    commandBuilder.setCommandType("read").build());
         }
 
         App.nextMarkNumber += App.numOfMarks;
